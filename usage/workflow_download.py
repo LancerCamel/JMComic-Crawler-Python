@@ -1,24 +1,7 @@
 from jmcomic import *
 from jmcomic.cl import JmcomicUI
 
-# 下方填入你要下载的本子的id，一行一个，每行的首尾可以有空白字符
-jm_albums = str_to_list('''
-JM642023
-JM641691
-JM634818
-634782
-JM630417
-JM625285
-JM624369
-jm620193
-JM615437
-JM609431
 
-
-''')
-
-
-download_album(jm_albums, option=get_option())
 # 单独下载章节
 jm_photos = '''
 
@@ -75,6 +58,26 @@ def get_option():
     log_before_raise()
 
     return option
+
+
+# 下方填入你要下载的本子的id，一行一个，每行的首尾可以有空白字符
+jm_albums = str_to_list('''
+JM642023
+JM641691
+JM634818
+634782
+JM630417
+JM625285
+JM624369
+jm620193
+JM615437
+JM609431
+
+
+''')
+
+
+download_album(jm_albums, option=get_option())
 
 
 def cover_option_config(option: JmOption):
