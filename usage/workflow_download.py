@@ -3,6 +3,12 @@ from jmcomic.cl import JmcomicUI
 
 # 下方填入你要下载的本子的id，一行一个，每行的首尾可以有空白字符
 jm_albums = '''
+jm303683
+jm291407
+jm149578
+jm124561
+jm78665
+jm219
 
 '''
 
@@ -137,4 +143,4 @@ def log_before_raise():
 if __name__ == '__main__':
     main()
 
-download_album([877, 878])
+
