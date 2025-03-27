@@ -3,14 +3,9 @@ from jmcomic.cl import JmcomicUI
 
 # 下方填入你要下载的本子的id，一行一个，每行的首尾可以有空白字符
 jm_albums = '''
-jm465335
-jm498750
-jm355659
-jm511010
-jm145289
-jm371875
-jm478437
-jm409896
+
+
+
 '''
 
 # 单独下载章节
@@ -138,6 +133,10 @@ def log_before_raise():
 
     JmModuleConfig.register_exception_listener(JmcomicException, exception_listener)
 
+  
+
 
 if __name__ == '__main__':
     main()
+
+download_album([398569, 373099, 138809])
