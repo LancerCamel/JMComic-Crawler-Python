@@ -1,6 +1,7 @@
 from test_jmcomic import *
 
 
+
 class Test_Api(JmTestConfigurable):
 
     def test_download_photo_by_id(self):
