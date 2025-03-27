@@ -4,6 +4,11 @@ from jmcomic.cl import JmcomicUI
 # 下方填入你要下载的本子的id，一行一个，每行的首尾可以有空白字符
 jm_albums = '''
 
+jm391894
+jm392101
+jm428347
+jm428348
+
 
 '''
 
@@ -132,13 +137,6 @@ def log_before_raise():
 
     JmModuleConfig.register_exception_listener(JmcomicException, exception_listener)
 
-client = JmOption.default().new_jm_client()
-
-# 分页查询，search_site就是禁漫网页上的【站内搜索】
-page: JmSearchPage = client.search_site(search_query='+MANA +无修正', page=1)
-# page默认的迭代方式是page.iter_id_title()，每次迭代返回 albun_id, title
-for album_id, title in page:
-    print(f'[{album_id}]: {title}')
 
 if __name__ == '__main__':
     main()
