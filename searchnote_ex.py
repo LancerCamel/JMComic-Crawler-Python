@@ -9,6 +9,6 @@ for album_id, title in page:
     print(f'[{album_id}]: {title}')
 
 # 直接搜索禁漫车号
-page = client.search_site(search_query='427413')
+page = client.search_site(search_query='1229298')
 album: JmAlbumDetail = page.single_album
 print(album.tags)
