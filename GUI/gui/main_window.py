@@ -299,7 +299,10 @@ class JMComicApp(ctk.CTk):
 
     def _do_window_configure(self):
         self._resize_pending = False
-        w = self.winfo_width()
+        try:
+            w = int(self.winfo_width() / self._get_window_scaling())
+        except Exception:
+            w = self.winfo_width()
         if w < 200:
             return
         if w == getattr(self, "_last_win_width", 0):
@@ -311,9 +314,63 @@ class JMComicApp(ctk.CTk):
             self.left_panel_card.configure(width=left_w)
         if hasattr(self, "info_card"):
             self.info_card.configure(width=info_w)
+        self._update_navbar_visibility(w, left_w)
+        self.after(60, self._relayout_bottom_rows)
 
     def _apply_responsive_layout(self):
         self._do_window_configure()
+        self._relayout_bottom_rows()
+
+    def _update_navbar_visibility(self, w, left_w):
+        if getattr(self, "lbl_path", None) is None:
+            return
+        if w < 980:
+            if self.lbl_path.winfo_ismapped():
+                self.lbl_path.pack_forget()
+        elif not self.lbl_path.winfo_ismapped():
+            self.lbl_path.pack(side="left")
+        if w < 1060:
+            if self.lbl_status.winfo_ismapped():
+                self.lbl_status.grid_forget()
+        elif not self.lbl_status.winfo_ismapped():
+            self.lbl_status.grid(row=0, column=5)
+        if w < 900:
+            if self.lbl_version.winfo_ismapped():
+                self.lbl_version.grid_forget()
+        elif not self.lbl_version.winfo_ismapped():
+            self.lbl_version.grid(row=0, column=1, sticky="w", pady=10)
+        if left_w < 260:
+            if self.lbl_manga_hint.winfo_ismapped():
+                self.lbl_manga_hint.pack_forget()
+        elif not self.lbl_manga_hint.winfo_ismapped():
+            self.lbl_manga_hint.pack(side="left")
+
+    def _wrap_row(self, frame, widgets):
+        avail = frame.winfo_width()
+        if avail <= 0:
+            try:
+                avail = max(int(self._current_width * self._get_window_scaling()) - 280, 200)
+            except Exception:
+                avail = 900
+        row = col = used = 0
+        for wid in widgets:
+            try:
+                bw = wid.winfo_reqwidth()
+            except Exception:
+                bw = max(wid.winfo_width(), 80)
+            if col > 0 and used + bw > avail:
+                row += 1
+                col = 0
+                used = 0
+            wid.grid(row=row, column=col, sticky="w", padx=(0, 4), pady=2)
+            col += 1
+            used += bw + 4
+
+    def _relayout_bottom_rows(self):
+        if not getattr(self, "action_buttons", None):
+            return
+        self._wrap_row(self.btn_frame, self.action_buttons)
+        self._wrap_row(self.ch_actions_frame, self.chapter_action_widgets)
 
     def _init_variables(self):
         self.username_var = ctk.StringVar()
@@ -377,11 +434,12 @@ class JMComicApp(ctk.CTk):
             text_color="white",
         ).grid(row=0, column=0, padx=(20, 8), pady=10)
 
-        ctk.CTkLabel(
+        self.lbl_version = ctk.CTkLabel(
             navbar, text="v2.0",
             font=ctk.CTkFont(size=11, family=FONT_FAMILY),
             text_color="white",
-        ).grid(row=0, column=1, sticky="w", pady=10)
+        )
+        self.lbl_version.grid(row=0, column=1, sticky="w", pady=10)
 
         search_frame = ctk.CTkFrame(navbar, fg_color="transparent")
         search_frame.grid(row=0, column=2, padx=10, pady=8, sticky="ew")
@@ -529,7 +587,7 @@ class JMComicApp(ctk.CTk):
         actions.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 6))
 
         self.lbl_manga_hint = ctk.CTkLabel(
-            actions, text="👆 点击漫画名查看章节",
+            actions, text="点击漫画名查看章节",
             font=ctk.CTkFont(size=11, family=FONT_FAMILY),
             text_color=TEXT_GRAY,
         )
@@ -645,20 +703,21 @@ class JMComicApp(ctk.CTk):
 
         ch_actions = ctk.CTkFrame(ch_card, fg_color="transparent")
         ch_actions.grid(row=2, column=0, sticky="ew", pady=(0, 4))
+        self.ch_actions_frame = ch_actions
 
-        ctk.CTkButton(
+        self.btn_ch_all = ctk.CTkButton(
             ch_actions, text="全选章节", width=74, height=26,
             font=ctk.CTkFont(size=12, family=FONT_FAMILY),
             fg_color=BLUE_LIGHT, hover_color=BLUE,
             text_color=BLUE, command=self._select_all_chapters,
-        ).pack(side="left", padx=(0, 4))
+        )
 
-        ctk.CTkButton(
+        self.btn_ch_none = ctk.CTkButton(
             ch_actions, text="取消全选", width=74, height=26,
             font=ctk.CTkFont(size=12, family=FONT_FAMILY),
             fg_color=BG_GRAY, hover_color=BORDER,
             text_color=TEXT_GRAY, command=self._deselect_all_chapters,
-        ).pack(side="left", padx=(0, 4))
+        )
 
         self.chk_auto_pdf = ctk.CTkCheckBox(
             ch_actions, text="每章下载完自动生成PDF",
@@ -668,7 +727,8 @@ class JMComicApp(ctk.CTk):
             fg_color=BLUE,
             font=ctk.CTkFont(size=12, family=FONT_FAMILY),
         )
-        self.chk_auto_pdf.pack(side="left", padx=(8, 0))
+        self.chapter_action_widgets = [self.btn_ch_all, self.btn_ch_none, self.chk_auto_pdf]
+        self._wrap_row(self.ch_actions_frame, self.chapter_action_widgets)
 
         prog_card = ctk.CTkFrame(ch_card, fg_color=BG_GRAY, corner_radius=8)
         prog_card.grid(row=3, column=0, sticky="ew", pady=(2, 4))
@@ -707,6 +767,7 @@ class JMComicApp(ctk.CTk):
 
         btn_frame = ctk.CTkFrame(ch_card, fg_color="transparent")
         btn_frame.grid(row=4, column=0, sticky="ew", pady=(0, 8))
+        self.btn_frame = btn_frame
 
         self.btn_download_sel = ctk.CTkButton(
             btn_frame, text="⬇ 下载选中章节", height=34,
@@ -714,7 +775,6 @@ class JMComicApp(ctk.CTk):
             fg_color=PINK, hover_color=PINK_HOVER,
             command=self._start_download,
         )
-        self.btn_download_sel.pack(side="left", padx=(0, 4))
 
         self.btn_download_all = ctk.CTkButton(
             btn_frame, text="⬇⬇ 下载全部", height=34,
@@ -722,7 +782,6 @@ class JMComicApp(ctk.CTk):
             fg_color=PINK_HOVER, hover_color=PINK,
             command=self._start_download_all,
         )
-        self.btn_download_all.pack(side="left", padx=(0, 4))
 
         self.btn_stop = ctk.CTkButton(
             btn_frame, text="停止", height=34, state="disabled",
@@ -730,7 +789,6 @@ class JMComicApp(ctk.CTk):
             fg_color=DANGER, hover_color="#E57373",
             command=self._stop_download,
         )
-        self.btn_stop.pack(side="left", padx=(0, 4))
 
         self.btn_pdf_chapter = ctk.CTkButton(
             btn_frame, text="📄 分章节PDF", height=34,
@@ -738,7 +796,6 @@ class JMComicApp(ctk.CTk):
             fg_color=BLUE, hover_color=BLUE_HOVER,
             command=self._make_pdf_by_chapter,
         )
-        self.btn_pdf_chapter.pack(side="left", padx=(0, 4))
 
         self.btn_pdf_full = ctk.CTkButton(
             btn_frame, text="📕 完整版PDF", height=34,
@@ -746,15 +803,19 @@ class JMComicApp(ctk.CTk):
             fg_color=BLUE, hover_color=BLUE_HOVER,
             command=self._make_pdf_full,
         )
-        self.btn_pdf_full.pack(side="left", padx=(0, 4))
 
-        ctk.CTkButton(
+        self.btn_folder = ctk.CTkButton(
             btn_frame, text="📁", width=34, height=34,
             font=ctk.CTkFont(size=14),
             fg_color=BG_GRAY, hover_color=BORDER,
             text_color=TEXT_GRAY,
             command=self._open_pdf_dir,
-        ).pack(side="left")
+        )
+        self.action_buttons = [
+            self.btn_download_sel, self.btn_download_all, self.btn_stop,
+            self.btn_pdf_chapter, self.btn_pdf_full, self.btn_folder,
+        ]
+        self._wrap_row(self.btn_frame, self.action_buttons)
 
     def _build_footer(self):
         card = ctk.CTkFrame(self, fg_color=BG_CARD, corner_radius=12)
@@ -783,7 +844,7 @@ class JMComicApp(ctk.CTk):
             card,
             font=ctk.CTkFont(size=11, family="Consolas"),
             fg_color=BG_GRAY, corner_radius=8,
-            border_width=0, wrap="word",
+            border_width=0, wrap="word", height=110,
         )
         self.log_box.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 10))
 
@@ -1264,6 +1325,7 @@ class JMComicApp(ctk.CTk):
             self.btn_download_sel.configure(state="normal", text="⬇ 下载选中章节")
             self.btn_download_all.configure(state="normal", text="⬇⬇ 下载全部")
             self.btn_stop.configure(state="disabled")
+        self.after(1, self._relayout_bottom_rows)
 
     def _download_worker(self, manga_info, chapter_ids, auto_pdf):
         title = manga_info["title"]
